@@ -64,23 +64,38 @@
 
     .counter { min-width: 190px; font-size: 14px; font-weight: 600; text-align: center; }
 
-    table { border-collapse: collapse; background: #fff; }
+    table {
+      border-collapse: separate;
+      border-spacing: 1px;
+      background: #fff;
+      padding: 1px;
+      border-radius: 10px;
+    }
 
     td {
       width: 10px;
       height: 10px;
-      border: 1px solid var(--border);
-      background-color: var(--dead);
+      border: 0;
+      border-radius: 3px;
+      background: var(--dead);
       transition: opacity 0.3s ease;
       padding: 0;
     }
 
     td.alive {
-      background-color: var(--generation-color, var(--alive));
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--generation-color, var(--alive)) 65%, white),
+        var(--generation-color, var(--alive))
+      );
     }
 
     td.trail {
-      background-color: var(--generation-color, var(--alive));
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--generation-color, var(--alive)) 65%, white),
+        var(--generation-color, var(--alive))
+      );
     }
   </style>
 </head>
