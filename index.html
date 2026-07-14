@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Conway's Game of Life (25x25)</title>
+  <style>
+    :root {
+      --alive: #e85d75;
+      --dead: #ffffff;
+      --border: #d9d9d9;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f7f8fa;
+      color: #1f2a36;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 18px;
+      background: #ffffff;
+      border: 1px solid #e7e9ee;
+      border-radius: 10px;
+      padding: 12px 16px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    label { font-size: 14px; font-weight: 600; }
+
+    input[type="number"],
+    select {
+      width: 90px;
+      padding: 6px 8px;
+      border: 1px solid #cfd6df;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    button {
+      border: 1px solid #cfd6df;
+      background: #ffffff;
+      color: #1f2a36;
+      padding: 7px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    button:hover:enabled { background: #f0f3f7; }
+    button:disabled,
+    input:disabled,
+    select:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .counter { min-width: 190px; font-size: 14px; font-weight: 600; text-align: center; }
+
+    table { border-collapse: collapse; background: #fff; }
+
+    td {
+      width: 10px;
+      height: 10px;
+      border: 1px solid var(--border);
+      background-color: var(--dead);
+      transition: opacity 0.3s ease;
+      padding: 0;
+    }
+
+    td.alive {
+      background-color: var(--generation-color, var(--alive));
+    }
+
+    td.trail {
+      background-color: var(--generation-color, var(--alive));
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <label for="generationsInput">Generations to run</label>
+    <input id="generationsInput" type="number" min="1" value="10" />
+    <label for="cullIntervalInput">Cull every X generations</label>
+    <input id="cullIntervalInput" type="number" min="1" value="5" />
+    <label for="paletteInput">Palette</label>
+    <select id="paletteInput">
+      <option value="rose">Rose</option>
+      <option value="ocean">Ocean</option>
+      <option value="forest">Forest</option>
+      <option value="sunset">Sunset</option>
+      <option value="violet">Violet</option>
+    </select>
+    <button id="runBtn">Run Simulation</button>
+    <button id="clearBtn">Clear</button>
+    <div class="counter" id="remainingCounter">Generations Remaining: 0</div>
+  </div>
+
+  <table id="lifeGrid" aria-label="Conway's Game of Life grid"></table>
+
+  <script>
+    const ROWS = 50;
+    const COLS = 50;
+    const INITIAL_LIVE_PROBABILITY = 0.25;
+    const TRAIL_LIFETIME = 6;
+    const table = document.getElementById("lifeGrid");
+    const generationsInput = document.getElementById("generationsInput");
+    const cullIntervalInput = document.getElementById("cullIntervalInput");
+    const paletteInput = document.getElementById("paletteInput");
+    const runBtn = document.getElementById("runBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const remainingCounter = document.getElementById("remainingCounter");
+
+    let isRunning = false;
+    let generationsRemaining = 0;
+    let generation = 0;
+    let grid = createEmptyGrid();
+    let nextGrid = createEmptyGrid();
+    let trailAges = createEmptyTrailAgeGrid();
+    const cellEls = [];
+    const palettes = {
+      rose: { hue: 340, saturation: 72 },
+      ocean: { hue: 200, saturation: 75 },
+      forest: { hue: 140, saturation: 58 },
+      sunset: { hue: 28, saturation: 82 },
+      violet: { hue: 275, saturation: 65 },
+    };
+
+    function createEmptyGrid() {
+      return Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+    }
+
+    function createEmptyTrailAgeGrid() {
+      return Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+    }
+
+    function seedInitialPattern() {
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          grid[r][c] = Math.random() < INITIAL_LIVE_PROBABILITY;
+        }
+      }
+    }
+
+    function buildTable() {
+      const frag = document.createDocumentFragment();
+      for (let r = 0; r < ROWS; r++) {
+        const tr = document.createElement("tr");
+        const rowEls = [];
+        for (let c = 0; c < COLS; c++) {
+          const td = document.createElement("td");
+          td.dataset.r = r;
+          td.dataset.c = c;
+          td.addEventListener("click", () => {
+            if (isRunning) return;
+            grid[r][c] = !grid[r][c];
+            td.classList.toggle("alive", grid[r][c]);
+            td.classList.remove("trail");
+            td.style.setProperty("--generation-color", getGenerationColor());
+            td.style.opacity = "1";
+            td.dataset.generation = generation;
+            trailAges[r][c] = 0;
+          });
+          tr.appendChild(td);
+          rowEls.push(td);
+        }
+        frag.appendChild(tr);
+        cellEls.push(rowEls);
+      }
+      table.appendChild(frag);
+    }
+
+    function renderGrid() {
+      const generationColor = getGenerationColor();
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const cell = cellEls[r][c];
+          if (grid[r][c]) {
+            cell.classList.add("alive");
+            cell.classList.remove("trail");
+            cell.style.setProperty("--generation-color", generationColor);
+            cell.style.opacity = "1";
+            cell.dataset.generation = generation;
+            trailAges[r][c] = 0;
+          } else if (cell.classList.contains("alive")) {
+            cell.classList.remove("alive");
+            cell.classList.add("trail");
+            cell.style.opacity = "1";
+            trailAges[r][c] = 0;
+          } else if (cell.classList.contains("trail")) {
+            trailAges[r][c]++;
+
+            if (trailAges[r][c] >= TRAIL_LIFETIME) {
+              cell.classList.remove("trail");
+              cell.style.removeProperty("--generation-color");
+              cell.style.opacity = "0";
+              delete cell.dataset.generation;
+              trailAges[r][c] = 0;
+            } else {
+              cell.style.opacity = String(1 - trailAges[r][c] / TRAIL_LIFETIME);
+            }
+          }
+        }
+      }
+    }
+
+    function getGenerationColor(generationNumber = generation) {
+      const palette = palettes[paletteInput.value];
+      const lightness = 38 + ((generationNumber * 7) % 44);
+      return `hsl(${palette.hue} ${palette.saturation}% ${lightness}%)`;
+    }
+
+    function refreshPalette() {
+      for (const row of cellEls) {
+        for (const cell of row) {
+          if (cell.dataset.generation !== undefined) {
+            cell.style.setProperty(
+              "--generation-color",
+              getGenerationColor(Number(cell.dataset.generation)),
+            );
+          }
+        }
+      }
+    }
+
+    function countAliveNeighbors(r, c) {
+      let alive = 0;
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          if (dr === 0 && dc === 0) continue;
+          const nr = (r + dr + ROWS) % ROWS;
+          const nc = (c + dc + COLS) % COLS;
+          if (grid[nr][nc]) alive++;
+        }
+      }
+      return alive;
+    }
+
+    function computeNextGeneration() {
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const aliveNeighbors = countAliveNeighbors(r, c);
+          if (grid[r][c]) {
+            nextGrid[r][c] = aliveNeighbors === 2 || aliveNeighbors === 3;
+          } else {
+            nextGrid[r][c] = aliveNeighbors === 3;
+          }
+        }
+      }
+      [grid, nextGrid] = [nextGrid, grid];
+    }
+
+    function cullRandomLiveCells(count) {
+      const liveCells = [];
+
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (grid[r][c]) {
+            liveCells.push([r, c]);
+          }
+        }
+      }
+
+      const cellsToCull = Math.min(count, liveCells.length);
+      for (let i = 0; i < cellsToCull; i++) {
+        const index = Math.floor(Math.random() * liveCells.length);
+        const [r, c] = liveCells.splice(index, 1)[0];
+        grid[r][c] = false;
+        const cell = cellEls[r][c];
+        cell.classList.remove("alive", "trail");
+        cell.style.removeProperty("--generation-color");
+        cell.style.opacity = "0";
+        delete cell.dataset.generation;
+        trailAges[r][c] = 0;
+      }
+    }
+
+    function updateRemainingCounter() {
+      remainingCounter.textContent = `Generations Remaining: ${generationsRemaining}`;
+    }
+
+    function setControlsDisabled(disabled) {
+      generationsInput.disabled = disabled;
+      cullIntervalInput.disabled = disabled;
+      paletteInput.disabled = disabled;
+      runBtn.disabled = disabled;
+      clearBtn.disabled = disabled;
+      table.style.pointerEvents = disabled ? "none" : "auto";
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function runSimulation() {
+      if (isRunning) return;
+      const parsed = Number.parseInt(generationsInput.value, 10);
+      if (!Number.isFinite(parsed) || parsed < 1) return;
+      const cullInterval = cullIntervalInput.valueAsNumber;
+      if (!Number.isInteger(cullInterval) || cullInterval < 1) {
+        cullIntervalInput.setCustomValidity("Enter a whole number of at least 1.");
+        cullIntervalInput.reportValidity();
+        return;
+      }
+      cullIntervalInput.setCustomValidity("");
+
+      isRunning = true;
+      generationsRemaining = parsed;
+      updateRemainingCounter();
+      setControlsDisabled(true);
+
+      try {
+        while (generationsRemaining > 0) {
+          computeNextGeneration();
+          generation++;
+          if (generation % cullInterval === 0) {
+            cullRandomLiveCells(cullInterval);
+          }
+          renderGrid();
+          generationsRemaining--;
+          updateRemainingCounter();
+          await sleep(500);
+        }
+      } finally {
+        isRunning = false;
+        setControlsDisabled(false);
+      }
+    }
+
+    function clearGrid() {
+      if (isRunning) return;
+      grid = createEmptyGrid();
+      nextGrid = createEmptyGrid();
+      trailAges = createEmptyTrailAgeGrid();
+      generation = 0;
+      generationsRemaining = 0;
+      updateRemainingCounter();
+      for (const row of cellEls) {
+        for (const cell of row) {
+          cell.classList.remove("alive");
+          cell.classList.remove("trail");
+          cell.style.removeProperty("--generation-color");
+          cell.style.removeProperty("opacity");
+          delete cell.dataset.generation;
+        }
+      }
+      seedInitialPattern();
+      renderGrid();
+    }
+
+    runBtn.addEventListener("click", runSimulation);
+    clearBtn.addEventListener("click", clearGrid);
+    paletteInput.addEventListener("change", refreshPalette);
+
+    buildTable();
+    seedInitialPattern();
+    renderGrid();
+    updateRemainingCounter();
+  </script>
+</body>
+</html>
