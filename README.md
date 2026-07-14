@@ -1,32 +1,21 @@
 # Game of Life Trails
 
-An interactive Conway's Game of Life simulation with random seeds, colored generation trails, configurable population culling, and selectable palettes.
+An interactive implementation of Conway's Game of Life featuring random seeds, generation-colored trails, configurable population culling, and multiple color palettes.
 
-## Run it
+## About This Implementation
+
+This project follows Conway's original Game of Life rules for births, survival, and death. Two intentional enhancements have been added:
+
+- **Generation trails** – When a live cell dies, it leaves behind a fading colored trail. Trails are purely visual and never affect future generations.
+- **Population culling** – Every _X_ generations, _X_ randomly selected live cells are removed. This introduces occasional disturbances that help prevent simulations from settling into static or repetitive patterns.
+
+Population culling exists because, in Game of Life, bad things happen to good cells. A cell can be perfectly healthy, following all the rules, and still disappear because its neighborhood changes around it. The culling mechanic embraces that idea by introducing unexpected losses that mimic the natural chaos of the simulation. These deliberate disruptions keep the world evolving, create new interactions, and prevent some simulations from quietly reaching a predictable end state.
+
+Aside from these enhancements, each generation is computed according to Conway's original rules on a wrapping (toroidal) 50 × 50 grid.
+
+## Run It
 
 Open `index.html` in a modern web browser:
 
 ```bash
 open index.html
-```
-
-No dependencies or build step are required.
-
-## Features
-
-- 50 by 50 wrapping Game of Life grid
-- Fresh random seed on page load and when clearing
-- Generation-specific color shades with fading trails
-- Palette picker: Rose, Ocean, Forest, Sunset, and Violet
-- Configurable population cull: every X generations, remove X random live cells
-- Click cells to toggle them before starting the simulation
-
-## Controls
-
-| Control | Description |
-| --- | --- |
-| Generations to run | Number of generations to simulate |
-| Cull every X generations | Frequency and number of randomly removed live cells |
-| Palette | Color scheme used for live cells and trails |
-| Run Simulation | Starts the selected number of generations |
-| Clear | Removes the current state and generates a new random seed |
