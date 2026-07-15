@@ -105,6 +105,13 @@
     <input id="generationsInput" type="number" min="1" value="10" />
     <label for="cullIntervalInput">Cull every X generations</label>
     <input id="cullIntervalInput" type="number" min="1" value="5" />
+    <label for="patternInput">Pattern</label>
+    <select id="patternInput">
+      <option value="none">None</option>
+      <option value="glider">Glider</option>
+      <option value="pulsar">Pulsar</option>
+      <option value="gosperGliderGun">Gosper Glider Gun</option>
+    </select>
     <label for="paletteInput">Palette</label>
     <select id="paletteInput">
       <option value="rose">Rose</option>
@@ -128,6 +135,7 @@
     const table = document.getElementById("lifeGrid");
     const generationsInput = document.getElementById("generationsInput");
     const cullIntervalInput = document.getElementById("cullIntervalInput");
+    const patternInput = document.getElementById("patternInput");
     const paletteInput = document.getElementById("paletteInput");
     const runBtn = document.getElementById("runBtn");
     const clearBtn = document.getElementById("clearBtn");
@@ -147,6 +155,38 @@
       sunset: { hue: 28, saturation: 82 },
       violet: { hue: 275, saturation: 65 },
     };
+    const patterns = {
+      glider: [
+        [0, 1],
+        [1, 2],
+        [2, 0],
+        [2, 1],
+        [2, 2],
+      ],
+      pulsar: [
+        [0, 2], [0, 3], [0, 4], [0, 8], [0, 9], [0, 10],
+        [2, 0], [2, 5], [2, 7], [2, 12],
+        [3, 0], [3, 5], [3, 7], [3, 12],
+        [4, 0], [4, 5], [4, 7], [4, 12],
+        [5, 2], [5, 3], [5, 4], [5, 8], [5, 9], [5, 10],
+        [7, 2], [7, 3], [7, 4], [7, 8], [7, 9], [7, 10],
+        [8, 0], [8, 5], [8, 7], [8, 12],
+        [9, 0], [9, 5], [9, 7], [9, 12],
+        [10, 0], [10, 5], [10, 7], [10, 12],
+        [12, 2], [12, 3], [12, 4], [12, 8], [12, 9], [12, 10],
+      ],
+      gosperGliderGun: [
+        [0, 24],
+        [1, 22], [1, 24],
+        [2, 12], [2, 13], [2, 20], [2, 21], [2, 34], [2, 35],
+        [3, 11], [3, 15], [3, 20], [3, 21], [3, 34], [3, 35],
+        [4, 0], [4, 1], [4, 10], [4, 16], [4, 20], [4, 21],
+        [5, 0], [5, 1], [5, 10], [5, 14], [5, 16], [5, 17], [5, 22], [5, 24],
+        [6, 10], [6, 16], [6, 24],
+        [7, 11], [7, 15],
+        [8, 12], [8, 13],
+      ],
+    };
 
     function createEmptyGrid() {
       return Array.from({ length: ROWS }, () => Array(COLS).fill(false));
@@ -154,6 +194,21 @@
 
     function createEmptyTrailAgeGrid() {
       return Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+    }
+
+    function loadPattern(pattern) {
+      resetGrid();
+      const maxRow = Math.max(...pattern.map(([row]) => row));
+      const maxCol = Math.max(...pattern.map(([, col]) => col));
+      const rowOffset = Math.floor(maxRow / 2);
+      const colOffset = Math.floor(maxCol / 2);
+
+      for (const [row, col] of pattern) {
+        const targetRow = (Math.floor(ROWS / 2) + row - rowOffset + ROWS) % ROWS;
+        const targetCol = (Math.floor(COLS / 2) + col - colOffset + COLS) % COLS;
+        grid[targetRow][targetCol] = true;
+      }
+      renderGrid();
     }
 
     function seedInitialPattern() {
@@ -173,16 +228,6 @@
           const td = document.createElement("td");
           td.dataset.r = r;
           td.dataset.c = c;
-          td.addEventListener("click", () => {
-            if (isRunning) return;
-            grid[r][c] = !grid[r][c];
-            td.classList.toggle("alive", grid[r][c]);
-            td.classList.remove("trail");
-            td.style.setProperty("--generation-color", getGenerationColor());
-            td.style.opacity = "1";
-            td.dataset.generation = generation;
-            trailAges[r][c] = 0;
-          });
           tr.appendChild(td);
           rowEls.push(td);
         }
@@ -306,6 +351,7 @@
     function setControlsDisabled(disabled) {
       generationsInput.disabled = disabled;
       cullIntervalInput.disabled = disabled;
+      patternInput.disabled = disabled;
       paletteInput.disabled = disabled;
       runBtn.disabled = disabled;
       clearBtn.disabled = disabled;
@@ -351,8 +397,7 @@
       }
     }
 
-    function clearGrid() {
-      if (isRunning) return;
+    function resetGrid() {
       grid = createEmptyGrid();
       nextGrid = createEmptyGrid();
       trailAges = createEmptyTrailAgeGrid();
@@ -368,6 +413,16 @@
           delete cell.dataset.generation;
         }
       }
+    }
+
+    function clearGrid() {
+      if (isRunning) return;
+      const pattern = patterns[patternInput.value];
+      if (pattern) {
+        loadPattern(pattern);
+        return;
+      }
+      resetGrid();
       seedInitialPattern();
       renderGrid();
     }
@@ -375,6 +430,14 @@
     runBtn.addEventListener("click", runSimulation);
     clearBtn.addEventListener("click", clearGrid);
     paletteInput.addEventListener("change", refreshPalette);
+    patternInput.addEventListener("change", () => {
+      const pattern = patterns[patternInput.value];
+      if (pattern) {
+        loadPattern(pattern);
+      } else {
+        clearGrid();
+      }
+    });
 
     buildTable();
     seedInitialPattern();
