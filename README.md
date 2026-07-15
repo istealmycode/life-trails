@@ -1,10 +1,10 @@
-# Life Trails Sandbox
+# Life Trails
 
 An interactive cellular-automaton sandbox featuring random seeds, curated patterns, generation-colored trails, population culling, spontaneous growth, and multiple color palettes.
 
 ## About This Implementation
 
-Life Trails Sandbox starts with Conway's original birth, survival, and death rules, then adds optional environmental forces. It is no longer a strict Conway's Game of Life implementation.
+Life Trails starts with Conway's original birth, survival, and death rules, then adds optional environmental forces. It is no longer a strict Conway's Game of Life implementation.
 
 - **Generation trails** – When a live cell dies, it leaves behind a fading colored trail. Trails are purely visual and never affect future generations.
 - **Population culling** – Every _X_ generations, up to _X_ randomly selected live cells are removed. Culling never directly removes the final live cell, and `0` disables it.
