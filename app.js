@@ -3,6 +3,7 @@ const COLS = 50;
 const INITIAL_LIVE_PROBABILITY = 0.25;
 const TRAIL_LIFETIME = 6;
 const EVENT_FLASH_DURATION = 250;
+const CLUSTER_SPROUT_CHANCE = 0.1;
 const table = document.getElementById("lifeGrid");
 const generationsInput = document.getElementById("generationsInput");
 const cullIntervalInput = document.getElementById("cullIntervalInput");
@@ -71,17 +72,23 @@ function createEmptyTrailAgeGrid() {
 
 function loadPattern(pattern) {
   resetGrid();
+  const minRow = Math.min(...pattern.map(([row]) => row));
   const maxRow = Math.max(...pattern.map(([row]) => row));
+  const minCol = Math.min(...pattern.map(([, col]) => col));
   const maxCol = Math.max(...pattern.map(([, col]) => col));
-  const rowOffset = Math.floor(maxRow / 2);
-  const colOffset = Math.floor(maxCol / 2);
+  const rowOffset = Math.floor((minRow + maxRow) / 2);
+  const colOffset = Math.floor((minCol + maxCol) / 2);
 
   for (const [row, col] of pattern) {
-    const targetRow = (Math.floor(ROWS / 2) + row - rowOffset + ROWS) % ROWS;
-    const targetCol = (Math.floor(COLS / 2) + col - colOffset + COLS) % COLS;
+    const targetRow = wrapCoordinate(Math.floor(ROWS / 2) + row - rowOffset, ROWS);
+    const targetCol = wrapCoordinate(Math.floor(COLS / 2) + col - colOffset, COLS);
     grid[targetRow][targetCol] = true;
   }
   renderGrid();
+}
+
+function wrapCoordinate(value, size) {
+  return ((value % size) + size) % size;
 }
 
 function seedInitialPattern() {
@@ -226,10 +233,21 @@ function sproutRandomCells(chance) {
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       if (!grid[r][c] && Math.random() < chance) {
-        grid[r][c] = true;
-        flashCell(cellEls[r][c], "sprout-flash");
+        sproutCell(r, c);
+        if (Math.random() < CLUSTER_SPROUT_CHANCE) {
+          sproutCell(r, wrapCoordinate(c + 1, COLS));
+          sproutCell(wrapCoordinate(r + 1, ROWS), c);
+          sproutCell(wrapCoordinate(r + 1, ROWS), wrapCoordinate(c + 1, COLS));
+        }
       }
     }
+  }
+}
+
+function sproutCell(row, col) {
+  if (!grid[row][col]) {
+    grid[row][col] = true;
+    flashCell(cellEls[row][col], "sprout-flash");
   }
 }
 
