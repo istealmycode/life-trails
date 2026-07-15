@@ -93,3 +93,6 @@ td.trail {
     var(--generation-color, var(--alive))
   );
 }
+
+td.cull-flash { background: #000000; }
+td.sprout-flash { background: #fff200; }

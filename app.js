@@ -2,6 +2,7 @@ const ROWS = 50;
 const COLS = 50;
 const INITIAL_LIVE_PROBABILITY = 0.25;
 const TRAIL_LIFETIME = 6;
+const EVENT_FLASH_DURATION = 250;
 const table = document.getElementById("lifeGrid");
 const generationsInput = document.getElementById("generationsInput");
 const cullIntervalInput = document.getElementById("cullIntervalInput");
@@ -210,9 +211,14 @@ function cullRandomLiveCells(count) {
     const cell = cellEls[r][c];
     cell.classList.remove("alive", "trail");
     cell.style.removeProperty("--generation-color");
-    cell.style.opacity = "0";
+    cell.style.opacity = "1";
     delete cell.dataset.generation;
     trailAges[r][c] = 0;
+    flashCell(cell, "cull-flash", () => {
+      if (!grid[r][c]) {
+        cell.style.opacity = "0";
+      }
+    });
   }
 }
 
@@ -221,9 +227,18 @@ function sproutRandomCells(chance) {
     for (let c = 0; c < COLS; c++) {
       if (!grid[r][c] && Math.random() < chance) {
         grid[r][c] = true;
+        flashCell(cellEls[r][c], "sprout-flash");
       }
     }
   }
+}
+
+function flashCell(cell, className, onComplete) {
+  cell.classList.add(className);
+  setTimeout(() => {
+    cell.classList.remove(className);
+    onComplete?.();
+  }, EVENT_FLASH_DURATION);
 }
 
 function updateSproutChanceOutput() {
@@ -303,8 +318,7 @@ function resetGrid() {
   updateRemainingCounter();
   for (const row of cellEls) {
     for (const cell of row) {
-      cell.classList.remove("alive");
-      cell.classList.remove("trail");
+      cell.classList.remove("alive", "trail", "cull-flash", "sprout-flash");
       cell.style.removeProperty("--generation-color");
       cell.style.removeProperty("opacity");
       delete cell.dataset.generation;
