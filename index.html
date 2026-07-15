@@ -286,7 +286,9 @@
       const cellsToCull = Math.min(count, liveCells.length);
       for (let i = 0; i < cellsToCull; i++) {
         const index = Math.floor(Math.random() * liveCells.length);
-        const [r, c] = liveCells.splice(index, 1)[0];
+        const [r, c] = liveCells[index];
+        liveCells[index] = liveCells[liveCells.length - 1];
+        liveCells.pop();
         grid[r][c] = false;
         const cell = cellEls[r][c];
         cell.classList.remove("alive", "trail");
