@@ -316,7 +316,7 @@
 
     async function runSimulation() {
       if (isRunning) return;
-      const parsed = Number.parseInt(generationsInput.value, 10);
+      const parsed = generationsInput.valueAsNumber;
       if (!Number.isFinite(parsed) || parsed < 1) return;
       const cullInterval = cullIntervalInput.valueAsNumber;
       if (!Number.isInteger(cullInterval) || cullInterval < 1) {
