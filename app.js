@@ -5,9 +5,11 @@ const TRAIL_LIFETIME = 6;
 const EVENT_FLASH_DURATION = 250;
 const MAX_CLUSTER_SPROUT_CHANCE = 0.1;
 const CLUSTER_SPROUT_RANGE = 10;
+const MAX_ENVIRONMENTAL_CHANCE = 0.1;
 const table = document.getElementById("lifeGrid");
 const generationsInput = document.getElementById("generationsInput");
-const cullIntervalInput = document.getElementById("cullIntervalInput");
+const cullChanceInput = document.getElementById("cullChanceInput");
+const cullChanceOutput = document.getElementById("cullChanceOutput");
 const sproutChanceInput = document.getElementById("sproutChanceInput");
 const sproutChanceOutput = document.getElementById("sproutChanceOutput");
 const patternInput = document.getElementById("patternInput");
@@ -200,7 +202,7 @@ function computeNextGeneration() {
   [grid, nextGrid] = [nextGrid, grid];
 }
 
-function cullRandomLiveCells(count) {
+function cullRandomLiveCells(chance) {
   const liveCells = [];
 
   for (let r = 0; r < ROWS; r++) {
@@ -211,12 +213,12 @@ function cullRandomLiveCells(count) {
     }
   }
 
-  const cellsToCull = Math.min(count, Math.max(0, liveCells.length - 1));
-  for (let i = 0; i < cellsToCull; i++) {
-    const index = Math.floor(Math.random() * liveCells.length);
-    const [r, c] = liveCells[index];
-    liveCells[index] = liveCells[liveCells.length - 1];
-    liveCells.pop();
+  const cellsToCull = liveCells.filter(() => Math.random() < chance);
+  if (liveCells.length > 0 && cellsToCull.length === liveCells.length) {
+    cellsToCull.splice(Math.floor(Math.random() * cellsToCull.length), 1);
+  }
+
+  for (const [r, c] of cellsToCull) {
     grid[r][c] = false;
     const cell = cellEls[r][c];
     cell.classList.remove("alive", "trail");
@@ -306,13 +308,17 @@ function updateSproutChanceOutput() {
   sproutChanceOutput.value = `${Number(sproutChanceInput.value)}%`;
 }
 
+function updateCullChanceOutput() {
+  cullChanceOutput.value = `${Number(cullChanceInput.value)}%`;
+}
+
 function updateRemainingCounter() {
   remainingCounter.textContent = `Generations Remaining: ${generationsRemaining}`;
 }
 
 function setControlsDisabled(disabled) {
   generationsInput.disabled = disabled;
-  cullIntervalInput.disabled = disabled;
+  cullChanceInput.disabled = disabled;
   sproutChanceInput.disabled = disabled;
   patternInput.disabled = disabled;
   paletteInput.disabled = disabled;
@@ -330,16 +336,16 @@ async function runSimulation() {
   if (isRunning) return;
   const parsed = generationsInput.valueAsNumber;
   if (!Number.isFinite(parsed) || parsed < 1) return;
-  const cullInterval = cullIntervalInput.valueAsNumber;
-  if (!Number.isInteger(cullInterval) || cullInterval < 0) {
-    cullIntervalInput.setCustomValidity("Enter a whole number of 0 or greater.");
-    cullIntervalInput.reportValidity();
+  const cullChance = cullChanceInput.valueAsNumber;
+  if (!Number.isFinite(cullChance) || cullChance < 0 || cullChance > MAX_ENVIRONMENTAL_CHANCE) {
+    cullChanceInput.setCustomValidity("Enter a percentage from 0 to 0.10.");
+    cullChanceInput.reportValidity();
     return;
   }
-  cullIntervalInput.setCustomValidity("");
+  cullChanceInput.setCustomValidity("");
   const sproutChance = sproutChanceInput.valueAsNumber;
-  if (!Number.isFinite(sproutChance) || sproutChance < 0 || sproutChance > 1) {
-    sproutChanceInput.setCustomValidity("Enter a percentage from 0 to 1.");
+  if (!Number.isFinite(sproutChance) || sproutChance < 0 || sproutChance > MAX_ENVIRONMENTAL_CHANCE) {
+    sproutChanceInput.setCustomValidity("Enter a percentage from 0 to 0.10.");
     sproutChanceInput.reportValidity();
     return;
   }
@@ -355,8 +361,8 @@ async function runSimulation() {
     while (generationsRemaining > 0 && !stopRequested) {
       computeNextGeneration();
       generation++;
-      if (cullInterval > 0 && generation % cullInterval === 0) {
-        cullRandomLiveCells(cullInterval);
+      if (cullChance > 0) {
+        cullRandomLiveCells(cullChance / 100);
       }
       if (sproutChance > 0) {
         sproutRandomCells(sproutChance / 100);
@@ -409,6 +415,7 @@ runBtn.addEventListener("click", runSimulation);
 stopBtn.addEventListener("click", stopSimulation);
 clearBtn.addEventListener("click", clearGrid);
 paletteInput.addEventListener("change", refreshPalette);
+cullChanceInput.addEventListener("input", updateCullChanceOutput);
 sproutChanceInput.addEventListener("input", updateSproutChanceOutput);
 patternInput.addEventListener("change", () => {
   const pattern = patterns[patternInput.value];
@@ -423,4 +430,5 @@ buildTable();
 seedInitialPattern();
 renderGrid();
 updateRemainingCounter();
+updateCullChanceOutput();
 updateSproutChanceOutput();

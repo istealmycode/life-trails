@@ -10,10 +10,11 @@
   <div class="controls">
     <label for="generationsInput" title="Number of generations to simulate.">Generations to run</label>
     <input id="generationsInput" type="number" min="1" value="10" title="Number of generations to simulate." />
-    <label for="cullIntervalInput" title="Remove live cells every X generations. Set to 0 to disable culling.">Cull every X generations</label>
-    <input id="cullIntervalInput" type="number" min="0" value="0" title="Remove live cells every X generations. Set to 0 to disable culling." />
-    <label for="sproutChanceInput" title="Chance for each empty cell to sprout after a generation, from 0% to 1%. Sprouts near viable life are more likely to form a 2×2 block. Set to 0 to disable spontaneous growth.">Sprout chance (%)</label>
-    <input id="sproutChanceInput" type="range" min="0" max="1" step="0.01" value="0" title="Chance for each empty cell to sprout after a generation, from 0% to 1%. Sprouts near viable life are more likely to form a 2×2 block. Set to 0 to disable spontaneous growth." />
+    <label for="cullChanceInput" title="Chance for each live cell to die after a generation, from 0% to 0.10%. Set to 0 to disable culling.">Cull chance (%)</label>
+    <input id="cullChanceInput" type="range" min="0" max="0.1" step="0.01" value="0" title="Chance for each live cell to die after a generation, from 0% to 0.10%. Set to 0 to disable culling." />
+    <output id="cullChanceOutput" for="cullChanceInput">0%</output>
+    <label for="sproutChanceInput" title="Chance for each empty cell to sprout after a generation, from 0% to 0.10%. Sprouts near viable life are more likely to form a 2×2 block. Set to 0 to disable spontaneous growth.">Sprout chance (%)</label>
+    <input id="sproutChanceInput" type="range" min="0" max="0.1" step="0.01" value="0" title="Chance for each empty cell to sprout after a generation, from 0% to 0.10%. Sprouts near viable life are more likely to form a 2×2 block. Set to 0 to disable spontaneous growth." />
     <output id="sproutChanceOutput" for="sproutChanceInput">0%</output>
     <label for="patternInput" title="Choose a starting pattern for the grid.">Pattern</label>
     <select id="patternInput" title="Choose a starting pattern for the grid.">
