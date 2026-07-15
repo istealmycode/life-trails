@@ -13,10 +13,12 @@ const sproutChanceOutput = document.getElementById("sproutChanceOutput");
 const patternInput = document.getElementById("patternInput");
 const paletteInput = document.getElementById("paletteInput");
 const runBtn = document.getElementById("runBtn");
+const stopBtn = document.getElementById("stopBtn");
 const clearBtn = document.getElementById("clearBtn");
 const remainingCounter = document.getElementById("remainingCounter");
 
 let isRunning = false;
+let stopRequested = false;
 let generationsRemaining = 0;
 let generation = 0;
 let grid = createEmptyGrid();
@@ -315,6 +317,7 @@ function setControlsDisabled(disabled) {
   patternInput.disabled = disabled;
   paletteInput.disabled = disabled;
   runBtn.disabled = disabled;
+  stopBtn.disabled = !disabled;
   clearBtn.disabled = disabled;
   table.style.pointerEvents = disabled ? "none" : "auto";
 }
@@ -343,12 +346,13 @@ async function runSimulation() {
   sproutChanceInput.setCustomValidity("");
 
   isRunning = true;
+  stopRequested = false;
   generationsRemaining = parsed;
   updateRemainingCounter();
   setControlsDisabled(true);
 
   try {
-    while (generationsRemaining > 0) {
+    while (generationsRemaining > 0 && !stopRequested) {
       computeNextGeneration();
       generation++;
       if (cullInterval > 0 && generation % cullInterval === 0) {
@@ -366,6 +370,10 @@ async function runSimulation() {
     isRunning = false;
     setControlsDisabled(false);
   }
+}
+
+function stopSimulation() {
+  stopRequested = true;
 }
 
 function resetGrid() {
@@ -398,6 +406,7 @@ function clearGrid() {
 }
 
 runBtn.addEventListener("click", runSimulation);
+stopBtn.addEventListener("click", stopSimulation);
 clearBtn.addEventListener("click", clearGrid);
 paletteInput.addEventListener("change", refreshPalette);
 sproutChanceInput.addEventListener("input", updateSproutChanceOutput);

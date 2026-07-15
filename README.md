@@ -15,6 +15,12 @@ These forces model a more resilient world: disturbance removes cells, while occa
 
 The baseline cellular rules run on a wrapping (toroidal) 50 × 50 grid.
 
+## Controls
+
+- **Run Simulation** – Advances the grid for the chosen number of generations.
+- **Stop** – Stops the current run after its active generation and keeps the current grid.
+- **Clear** – Reloads the selected pattern, or creates a random grid when no pattern is selected.
+
 ## Run It
 
 Open `index.html` in a modern web browser:
