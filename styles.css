@@ -94,8 +94,25 @@ td.trail {
   );
 }
 
-td.cull-flash { background: #000000; }
-td.sprout-flash { background: #fff200; }
+td.cull-flash {
+  background: #000000;
+  animation: cull-sparkle 250ms linear;
+}
+
+td.sprout-flash {
+  background: #fff200;
+  animation: sprout-sparkle 250ms linear;
+}
+
+@keyframes cull-sparkle {
+  0%, 40%, 80%, 100% { opacity: 1; }
+  20%, 60% { opacity: 0.15; }
+}
+
+@keyframes sprout-sparkle {
+  0%, 40%, 80%, 100% { opacity: 1; filter: brightness(1); }
+  20%, 60% { opacity: 0.25; filter: brightness(1.8); }
+}
 
 @media (max-width: 900px) {
   body {
