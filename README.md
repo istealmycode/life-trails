@@ -1,17 +1,19 @@
-# Game of Life Trails
+# Life Trails Sandbox
 
-An interactive implementation of Conway's Game of Life featuring random seeds, generation-colored trails, configurable population culling, and multiple color palettes.
+An interactive cellular-automaton sandbox featuring random seeds, curated patterns, generation-colored trails, population culling, spontaneous growth, and multiple color palettes.
 
 ## About This Implementation
 
-This project follows Conway's original Game of Life rules for births, survival, and death. Two intentional enhancements have been added:
+Life Trails Sandbox starts with Conway's original birth, survival, and death rules, then adds optional environmental forces. It is no longer a strict Conway's Game of Life implementation.
 
 - **Generation trails** – When a live cell dies, it leaves behind a fading colored trail. Trails are purely visual and never affect future generations.
-- **Population culling** – Every _X_ generations, _X_ randomly selected live cells are removed. This introduces occasional disturbances that help prevent simulations from settling into static or repetitive patterns.
+- **Population culling** – Every _X_ generations, up to _X_ randomly selected live cells are removed. Culling never directly removes the final live cell, and `0` disables it.
+- **Spontaneous growth** – Each empty cell has the configured per-generation chance to sprout, from `0%` to `1%`. A `0%` sprout chance disables this force, preserving selected patterns.
+- **Pattern library** – Glider, Pulsar, and Gosper Glider Gun patterns can replace the current board.
 
-Population culling exists because, in Game of Life, bad things happen to good cells. A cell can be perfectly healthy, following all the rules, and still disappear because its neighborhood changes around it. The culling mechanic embraces that idea by introducing unexpected losses that mimic the natural chaos of the simulation. These deliberate disruptions keep the world evolving, create new interactions, and prevent some simulations from quietly reaching a predictable end state.
+These forces model a more resilient world: disturbance removes cells, while occasional spontaneous growth gives empty terrain a chance to become alive again.
 
-Aside from these enhancements, each generation is computed according to Conway's original rules on a wrapping (toroidal) 50 × 50 grid.
+The baseline cellular rules run on a wrapping (toroidal) 50 × 50 grid.
 
 ## Run It
 
