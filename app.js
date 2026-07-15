@@ -3,7 +3,8 @@ const COLS = 50;
 const INITIAL_LIVE_PROBABILITY = 0.25;
 const TRAIL_LIFETIME = 6;
 const EVENT_FLASH_DURATION = 250;
-const CLUSTER_SPROUT_CHANCE = 0.1;
+const MAX_CLUSTER_SPROUT_CHANCE = 0.1;
+const CLUSTER_SPROUT_RANGE = 10;
 const table = document.getElementById("lifeGrid");
 const generationsInput = document.getElementById("generationsInput");
 const cullIntervalInput = document.getElementById("cullIntervalInput");
@@ -230,18 +231,58 @@ function cullRandomLiveCells(count) {
 }
 
 function sproutRandomCells(chance) {
+  const viableCells = getViableCells();
+  const sproutCells = [];
+
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       if (!grid[r][c] && Math.random() < chance) {
-        sproutCell(r, c);
-        if (Math.random() < CLUSTER_SPROUT_CHANCE) {
-          sproutCell(r, wrapCoordinate(c + 1, COLS));
-          sproutCell(wrapCoordinate(r + 1, ROWS), c);
-          sproutCell(wrapCoordinate(r + 1, ROWS), wrapCoordinate(c + 1, COLS));
-        }
+        sproutCells.push([r, c]);
       }
     }
   }
+
+  for (const [r, c] of sproutCells) {
+    sproutCell(r, c);
+    if (Math.random() < getClusterSproutChance(r, c, viableCells)) {
+      sproutCell(r, wrapCoordinate(c + 1, COLS));
+      sproutCell(wrapCoordinate(r + 1, ROWS), c);
+      sproutCell(wrapCoordinate(r + 1, ROWS), wrapCoordinate(c + 1, COLS));
+    }
+  }
+}
+
+function getViableCells() {
+  const viableCells = [];
+
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const aliveNeighbors = countAliveNeighbors(r, c);
+      if (grid[r][c] && (aliveNeighbors === 2 || aliveNeighbors === 3)) {
+        viableCells.push([r, c]);
+      }
+    }
+  }
+
+  return viableCells;
+}
+
+function getClusterSproutChance(row, col, viableCells) {
+  let nearestDistance = Infinity;
+
+  for (const [viableRow, viableCol] of viableCells) {
+    const rowDistance = Math.abs(row - viableRow);
+    const colDistance = Math.abs(col - viableCol);
+    const wrappedRowDistance = Math.min(rowDistance, ROWS - rowDistance);
+    const wrappedColDistance = Math.min(colDistance, COLS - colDistance);
+    nearestDistance = Math.min(nearestDistance, Math.max(wrappedRowDistance, wrappedColDistance));
+  }
+
+  if (nearestDistance > CLUSTER_SPROUT_RANGE) {
+    return 0;
+  }
+
+  return MAX_CLUSTER_SPROUT_CHANCE * (1 - (nearestDistance - 1) / CLUSTER_SPROUT_RANGE);
 }
 
 function sproutCell(row, col) {
