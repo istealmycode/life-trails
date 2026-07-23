@@ -2,6 +2,8 @@
 
 An interactive cellular automaton featuring random seeds, curated patterns, generation-colored trails, population culling, spontaneous growth, and multiple color palettes.
 
+[View the demo](https://istealmycode.github.io/life-trails/)
+
 ## About This Implementation
 
 Life Trails starts with Conway's original birth, survival, and death rules, then adds optional environmental forces. It is no longer a strict Conway's Game of Life implementation.
